@@ -1,10 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
 
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-void main() {
+Future<void> initNotifications() async {
+  tzdata.initializeTimeZones();
+
+  const AndroidInitializationSettings androidSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings settings =
+      InitializationSettings(android: androidSettings);
+
+  await notificationsPlugin.initialize(settings);
+
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'repeatly_channel',
+    'Repeatly Reminders',
+    description: 'Hourly reminders',
+    importance: Importance.high,
+  );
+
+  await notificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+}
+
+Future<void> scheduleHourlyNotification() async {
+  await notificationsPlugin.periodicallyShow(
+    0,
+    'Repeatly',
+    'احكيلي حصل معاك إيه النهارده؟',
+    RepeatInterval.hourly,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'repeatly_channel',
+        'Repeatly Reminders',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    ),
+  );
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initNotifications();
+  await scheduleHourlyNotification();
   runApp(const RepeatlyApp());
 }
 
